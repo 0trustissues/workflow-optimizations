@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>API steps that replace model calls</title>
+<link rel="stylesheet" href="style/eweb.css">
+<style>
+  h1{font-size:44px;letter-spacing:-1.5px}
+  .tally{position:absolute;right:72px;top:52px;z-index:3;display:flex;align-items:center;gap:14px}
+  .tally .stat{font-size:64px;letter-spacing:-2.5px;min-width:40px;text-align:right;display:inline-block}
+  .tally .stat.pop{animation:tpop .35s cubic-bezier(.2,.9,.3,1.4)}
+  @keyframes tpop{0%{transform:scale(1.25)}100%{transform:none}}
+  .tally .tl{font:500 11px/1.5 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--grey)}
+  .tally .of{font:500 28px var(--sans);color:var(--grey-l);letter-spacing:-1px;margin-left:-8px}
+  .rp{position:absolute;right:72px;top:636px;z-index:6;font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--grey);border:1px solid var(--line);background:#fff;padding:6px 10px;cursor:pointer}
+  .rp:hover{border-color:var(--blue);color:var(--blue)}
+
+  .tbl{position:absolute;left:72px;right:72px;top:168px;z-index:2}
+  .th,.row{display:grid;grid-template-columns:272px 292px 44px 1fr;align-items:center;padding:0 14px}
+  .th{height:34px;border-bottom:1px solid var(--ink);font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+  .row{height:70px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;position:relative}
+  .row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue);transform:scaleY(0);transition:transform .18s}
+  .row:hover{background:var(--bg)}
+  .row:hover::before{transform:scaleY(1)}
+  .go{animation:ew-in .45s cubic-bezier(.2,.7,.2,1) var(--d) both}
+
+  .job{display:flex;align-items:center;gap:14px;font-size:17px;font-weight:500;letter-spacing:-.2px}
+  .ic{width:40px;height:40px;border:1.5px solid var(--blue);display:flex;align-items:center;justify-content:center;background:#fff;color:var(--blue);flex:none;transition:background .18s,color .18s}
+  .row:hover .ic{background:var(--blue);color:#fff}
+  .ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  .old{position:relative;display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid #F7B6D2;background:#FEF1F7;font-size:14px;color:var(--char);justify-self:start}
+  .old::before{content:'';width:7px;height:7px;background:var(--pink);flex:none}
+  .old span{display:inline-block}
+  .old::after{content:'';position:absolute;left:6px;right:6px;top:50%;height:2px;margin-top:-1px;background:var(--pink);transform:scaleX(0);transform-origin:left}
+  .go .old::after{animation:strike .25s ease calc(var(--d) + .3s) forwards}
+  .go .old span{animation:dimold .25s ease calc(var(--d) + .3s) forwards}
+  @keyframes strike{to{transform:scaleX(1)}}
+  @keyframes dimold{to{opacity:.5}}
+
+  .arr{width:44px;height:16px;overflow:visible;transition:transform .2s}
+  .arr path{fill:none;stroke:var(--blue);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:44;stroke-dashoffset:44}
+  .go .arr path{animation:drawl .25s ease calc(var(--d) + .45s) forwards}
+  .row:hover .arr{transform:translateX(5px)}
+  @keyframes drawl{to{stroke-dashoffset:0}}
+
+  .new{justify-self:start;display:inline-block;padding:8px 12px;background:var(--blue-l);border:1px solid #B8D2FA;font:400 13px var(--mono);color:var(--char);white-space:nowrap;transition:transform .18s,box-shadow .18s;opacity:0}
+  .new b{color:var(--blue-d);font-weight:600}
+  .go .new{animation:npop .35s cubic-bezier(.2,.9,.3,1.3) calc(var(--d) + .6s) backwards;opacity:1}
+  .row:hover .new{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--blue)}
+  @keyframes npop{from{opacity:0;transform:translateX(-14px) scale(.9)}}
+</style>
+</head>
+<body data-foot="Workflow optimizations · Replace plumbing">
+<div class="z">
+  <div class="eyebrow in1">Replace plumbing · <b>API steps</b></div>
+  <h1 class="in2">API steps that replace <span class="b">model calls.</span></h1>
+</div>
+<div class="tally in2"><span class="stat" id="tn">0</span><span class="of">/ 6</span><span class="tl">model calls<br>replaced</span></div>
+<div class="tbl" id="tbl"></div>
+<button class="rp in5" id="rp">↻ replay</button>
+
+<script src="style/eweb.js"></script>
+<script src="/js/fuckslides.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const still = navigator.webdriver;
+  const ICON = {
+    search: '<circle cx="10" cy="10" r="6"/><path d="M15 15l5 5"/>',
+    feed: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3.5 3.5 3.5 14.5 0 18M12 3c-3.5 3.5-3.5 14.5 0 18"/>',
+    plug: '<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/>',
+    shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+    case: '<rect x="3" y="7" width="18" height="13"/><path d="M9 7V4h6v3M3 13h18"/>',
+    target: '<circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>'
+  };
+  // [icon, job, what the model used to do, step (bold part), step (detail)]
+  const ROWS = [
+    ['search', 'Fetch alerts', 'search the index', 'elasticsearch.request', ' · size, _source.excludes'],
+    ['feed', 'Pull a feed', 'browse the web', 'http GET', ' · size cap, timeout, retry'],
+    ['plug', 'Check a connector', 'assume it exists', 'kibana.request GET', ' /api/actions/connector/{id}'],
+    ['shield', 'Check reputation', 'call a lookup tool', 'virustotal.scanFileHash', ' · scanUrl · getIpReport'],
+    ['case', 'Write the case', 'create and edit cases', 'cases.createCase', ' · addComment · addAlerts'],
+    ['target', 'Add observables', 'extract IOCs from prose', 'data.map → cases.addObservables', '']
+  ];
+  const tn = $('tn'); let timers = [];
+
+  function build(){
+    timers.forEach(clearTimeout); timers = []; tn.textContent = '0';
+    $('tbl').innerHTML = '<div class="th"><span>Job</span><span>Instead of asking the model to…</span><span></span><span>Step used</span></div>' +
+      ROWS.map(([ic, job, old, step, rest], i) => `<div class="row go" style="--d:${(.2 + i * .13).toFixed(2)}s" data-i="${i}">
+        <div class="job"><span class="ic"><svg viewBox="0 0 24 24">${ICON[ic]}</svg></span>${job}</div>
+        <div><span class="old"><span>${old}</span></span></div>
+        <svg class="arr" viewBox="0 0 44 16"><path d="M2 8h38M33 2l7 6-7 6"/></svg>
+        <div><span class="new"><b>${step}</b>${rest}</span></div></div>`).join('');
+    ROWS.forEach((r, i) => {
+      const bump = () => { tn.textContent = i + 1; tn.classList.remove('pop'); void tn.offsetWidth; tn.classList.add('pop'); };
+      if (still) tn.textContent = ROWS.length; else timers.push(setTimeout(bump, ((.2 + i * .13) + .6) * 1000));
+    });
+  }
+  // click a row to replay just that one
+  $('tbl').addEventListener('click', e => {
+    const row = e.target.closest('.row'); if (!row) return;
+    row.classList.remove('go'); void row.offsetWidth; row.style.setProperty('--d', '0s'); row.classList.add('go');
+  });
+  $('rp').addEventListener('click', build);
+  build();
+})();
+</script>
+</body>
+</html>

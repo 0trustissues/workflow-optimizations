@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Make every feature a switch</title>
+<link rel="stylesheet" href="style/eweb.css">
+<style>
+  h1{font-size:44px;letter-spacing:-1.5px}
+  .wrap{position:absolute;left:72px;right:72px;top:150px;height:410px;display:grid;grid-template-columns:5fr 7fr;gap:20px;z-index:2}
+  .card{padding:18px 22px;display:flex;flex-direction:column}
+  .hd{display:flex;justify-content:space-between;align-items:center}
+  h2{font-size:20px;font-weight:600;letter-spacing:-.5px}
+  .rs{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--grey);border:1px solid var(--line);background:#fff;padding:5px 9px;cursor:pointer}
+  .rs:hover{border-color:var(--blue);color:var(--blue)}
+  .ds{font-size:13.5px;line-height:1.45;color:var(--grey);margin-top:6px}
+
+  .code{margin-top:12px;background:var(--ink);color:#E6EAF2;font:400 12.5px/21px var(--mono);padding:14px 16px;white-space:pre}
+  .ln{padding:0 6px;margin:0 -6px;border-radius:2px}
+  .ln.fl{animation:flash .9s ease}
+  @keyframes flash{0%{background:rgba(11,100,221,.8)}100%{background:transparent}}
+  .code .t{color:var(--teal)}.code .f{color:var(--orange)}.code .n{color:var(--yellow)}.code .kk{color:#C9D2E3}
+
+  .meter{margin-top:auto;padding-top:12px}
+  .mt{display:flex;justify-content:space-between;font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--grey);margin-bottom:7px}
+  .mt b{color:var(--ink);font-weight:600}
+  .mtr{height:12px;background:var(--bg);border:1px solid var(--line);position:relative;overflow:hidden}
+  .mtr i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--blue);transition:width .45s cubic-bezier(.2,.8,.2,1),background .3s}
+  .mtr i.lean{background:var(--teal-d)}
+
+  .th,.sw-row{display:grid;grid-template-columns:70px 1fr 1fr;align-items:center}
+  .th{height:30px;font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--grey);border-bottom:1px solid var(--line)}
+  .sw-row{flex:1;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s}
+  .sw-row:last-child{border-bottom:0}
+  .sw-row:hover{background:var(--bg)}
+  .nm{font-size:17px;font-weight:600;letter-spacing:-.3px}
+  .sv{font-size:14px;color:var(--blue);transition:color .2s}
+  .sw-row.off .sv{color:var(--teal-d)}
+  .sw-row.off .sv::before{content:'✓ ';font-weight:700}
+  .sw-row.keep .sv{color:var(--grey)}
+  .sw-row.keep.off .sv{color:var(--orange)}
+  .sw-row.keep.off .sv::before{content:''}
+  .tg{width:46px;height:26px;border-radius:13px;background:var(--grey-l);border:0;position:relative;cursor:pointer;transition:background .2s}
+  .tg::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .24s cubic-bezier(.3,1.5,.5,1);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .tg.on{background:var(--blue)}
+  .tg.on::after{transform:translateX(20px)}
+  .rows{display:flex;flex-direction:column;flex:1;opacity:1}
+
+  .ban{position:absolute;left:72px;right:72px;top:578px;height:58px;background:var(--blue);color:#fff;display:flex;align-items:center;gap:14px;padding:0 22px;z-index:2}
+  .ban .l{font-size:19px;font-weight:600;letter-spacing:-.4px;margin-right:6px}
+  .np{font:500 14px var(--mono);color:var(--blue-d);background:#fff;border:0;border-radius:20px;padding:8px 18px;cursor:pointer;transition:transform .15s,box-shadow .15s}
+  .np:hover{transform:translate(-2px,-2px);box-shadow:3px 3px 0 var(--ink)}
+  .np b{font-weight:600}
+  .np.pop{animation:npop .35s cubic-bezier(.2,.9,.3,1.5)}
+  @keyframes npop{0%{transform:scale(1.18)}100%{transform:none}}
+  .ban .h{margin-left:auto;font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.75)}
+</style>
+</head>
+<body data-foot="Workflow optimizations · Switches">
+<div class="z">
+  <div class="eyebrow in1">Start lean · <b>Switches</b></div>
+  <h1 class="in2">Make every feature <span class="b">a switch.</span></h1>
+</div>
+
+<div class="wrap">
+  <div class="card in3">
+    <div class="hd"><h2>Set them once, at the top</h2><button class="rs" id="rs">↻ reset</button></div>
+    <p class="ds">One const (or input) per feature. An if step reads it, so “false” skips the work.</p>
+    <div class="code" id="code"></div>
+    <div class="meter">
+      <div class="mt"><span>Relative cost per run · illustrative</span><b id="mv">lean</b></div>
+      <div class="mtr"><i id="mf"></i></div>
+    </div>
+  </div>
+  <div class="card in4">
+    <div class="th"><span></span><span>Switch</span><span>Turn it off to save</span></div>
+    <div class="rows" id="rows"></div>
+  </div>
+</div>
+
+<div class="ban in5">
+  <span class="l">Numbers are switches too:</span>
+  <button class="np" data-k="alert_limit">alert_limit: <b></b></button>
+  <button class="np" data-k="lookback">lookback: <b></b></button>
+  <button class="np" data-k="hunt_lookback">hunt_lookback: <b></b></button>
+  <span class="h">click to tweak</span>
+</div>
+
+<script src="style/eweb.js"></script>
+<script src="/js/fuckslides.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const still = navigator.webdriver;
+
+  // [const, label, what turning it off saves, relative cost weight, default]
+  const SW = [
+    ['threat_hunting', 'Threat hunting', '1–2 model calls per item', 3, true],
+    ['detection_gaps', 'Detection-gap analysis', 'A call and a case section', 2, true],
+    ['steps_table', 'Steps table', 'Output tokens', 1, false],
+    ['virustotal', 'Reputation lookups', 'Lookups and a prompt block', 1.5, true],
+    ['findings_index', 'Findings index', 'One model call', 1.5, true],
+    ['add_observables', 'Case observables', 'Nothing: API only, keep on', 0, true]
+  ];
+  const NUM = {
+    alert_limit: {opts: ['1', '3', '5', '10'], i: 2},
+    lookback: {opts: ['60 min', '180 min', '375 min', '720 min'], i: 2},
+    hunt_lookback: {opts: ['1 day', '3 days', '7 days', '14 days'], i: 2}
+  };
+  const state = {};
+  SW.forEach(([k,,,, d]) => state[k] = false);
+
+  $('rows').innerHTML = SW.map(([k, label, sv]) => `<div class="sw-row off${k === 'add_observables' ? ' keep' : ''}" data-k="${k}"><span><button class="tg" aria-label="${label}"></button></span><span class="nm">${label}</span><span class="sv">${sv}</span></div>`).join('');
+
+  function renderCode(changed){
+    const L = ['<span class="kk">consts:</span>'];
+    SW.forEach(([k]) => L.push([k, `  <span class="kk">${k}</span>: <span class="${state[k] ? 't' : 'f'}">"${state[k]}"</span>`]));
+    Object.keys(NUM).forEach(k => L.push([k, `  <span class="kk">${k}</span>: <span class="n">${NUM[k].opts[NUM[k].i]}</span>`]));
+    $('code').innerHTML = L.map(l => typeof l === 'string' ? `<div class="ln">${l}</div>` : `<div class="ln${l[0] === changed ? ' fl' : ''}">${l[1]}</div>`).join('');
+  }
+  function renderRows(){
+    document.querySelectorAll('.sw-row').forEach(r => {
+      const on = state[r.dataset.k];
+      r.classList.toggle('off', !on); r.querySelector('.tg').classList.toggle('on', on);
+    });
+    const max = SW.reduce((a, s) => a + s[3], 1), cost = SW.reduce((a, s) => a + (state[s[0]] ? s[3] : 0), 1), p = cost / max;
+    $('mf').style.width = Math.max(8, p * 100) + '%';
+    $('mf').classList.toggle('lean', p < .5);
+    $('mv').textContent = p > .8 ? 'full' : p > .5 ? 'moderate' : 'lean';
+  }
+  const set = (k, v, flash) => { state[k] = v; renderRows(); renderCode(flash ? k : null); };
+
+  $('rows').addEventListener('click', e => { const r = e.target.closest('.sw-row'); if (r) set(r.dataset.k, !state[r.dataset.k], true); });
+  document.querySelectorAll('.np').forEach(b => {
+    const sync = () => b.querySelector('b').textContent = NUM[b.dataset.k].opts[NUM[b.dataset.k].i];
+    sync();
+    b.addEventListener('click', () => {
+      const n = NUM[b.dataset.k]; n.i = (n.i + 1) % n.opts.length; sync();
+      b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); renderCode(b.dataset.k);
+    });
+  });
+
+  // play the defaults in, one switch at a time
+  let timers = [];
+  function cascade(){
+    timers.forEach(clearTimeout); timers = [];
+    SW.forEach(([k]) => state[k] = false); renderRows(); renderCode();
+    SW.forEach(([k,,,, d], i) => {
+      if (still) { state[k] = d; return; }
+      if (d) timers.push(setTimeout(() => set(k, true, true), 500 + i * 150));
+    });
+    if (still) { renderRows(); renderCode(); }
+  }
+  $('rs').addEventListener('click', () => { Object.values(NUM).forEach(n => n.i = 2); cascade(); });
+  cascade();
+})();
+</script>
+</body>
+</html>

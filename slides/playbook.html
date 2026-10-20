@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Playbook: seven steps for any workflow</title>
+<link rel="stylesheet" href="style/eweb.css">
+<style>
+  h1{font-size:44px;letter-spacing:-1.5px}
+  .grid{position:absolute;left:72px;right:72px;top:150px;bottom:64px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr 1fr;gap:16px;z-index:2}
+  .pc{background:#fff;border:1px solid var(--line);padding:16px 18px;display:flex;flex-direction:column;position:relative;cursor:default;
+      opacity:0;transform:translateY(16px);transition:transform .2s,box-shadow .2s,border-color .2s,opacity .35s}
+  .pc.show{opacity:1;transform:none}
+  .pc.act,.pc.show:hover{border-color:var(--ink);box-shadow:7px 7px 0 var(--blue);transform:translate(-3px,-3px)}
+  .hd{display:flex;justify-content:space-between;align-items:center}
+  .ic{width:42px;height:42px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;transition:transform .25s cubic-bezier(.3,1.5,.5,1)}
+  .pc.act .ic,.pc:hover .ic{transform:rotate(-8deg) scale(1.12)}
+  .ic svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ic path,.ic circle,.ic rect{stroke-dasharray:70;stroke-dashoffset:70}
+  .pc.show .ic path,.pc.show .ic circle,.pc.show .ic rect{animation:drawi .7s ease .1s forwards}
+  @keyframes drawi{to{stroke-dashoffset:0}}
+  .no{font:600 13px var(--mono);color:var(--blue);letter-spacing:.04em}
+  h2{font-size:22px;font-weight:600;letter-spacing:-.6px;line-height:1.12;margin-top:12px}
+  .q{font-style:italic;font-size:14.5px;line-height:1.4;color:var(--grey);margin-top:8px}
+  .a{font-size:15.5px;line-height:1.4;color:var(--ink);margin-top:auto;padding-top:10px;border-top:1px dashed var(--line)}
+  .pc.fin{background:var(--blue);border-color:var(--blue);justify-content:center;padding:22px}
+  .pc.fin.show:hover,.pc.fin.act{border-color:var(--ink);box-shadow:7px 7px 0 var(--ink)}
+  .fin .t{font-size:26px;font-weight:600;letter-spacing:-.9px;line-height:1.14;color:#fff}
+  .fin .t span{display:block;color:var(--blue-l)}
+  .fin.pulse{animation:pls .7s ease}
+  @keyframes pls{0%{box-shadow:0 0 0 0 rgba(11,100,221,.55)}100%{box-shadow:0 0 0 22px rgba(11,100,221,0)}}
+  .rail{position:absolute;left:72px;top:140px;height:2px;width:0;background:var(--blue);z-index:3;transition:width .22s linear}
+  .rp{position:absolute;top:50px;right:72px;z-index:6;font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--grey);border:1px solid var(--line);background:#fff;padding:6px 10px;cursor:pointer}
+  .rp:hover{border-color:var(--blue);color:var(--blue)}
+  body.still .pc{transition:none}
+  body.still .ic path,body.still .ic circle,body.still .ic rect{stroke-dashoffset:0;animation:none!important}
+</style>
+</head>
+<body data-foot="Workflow optimizations · Playbook">
+<div class="z">
+  <div class="eyebrow in1">Playbook · <b>Seven steps</b></div>
+  <h1 class="in2">Playbook: seven steps for <span class="b">any workflow.</span></h1>
+</div>
+<button class="rp in1" id="rp">↻ replay</button>
+<div class="rail" id="rail"></div>
+<div class="grid" id="grid"></div>
+
+<script src="style/eweb.js"></script>
+<script src="/js/fuckslides.js"></script>
+<script>
+(function(){
+  const still = navigator.webdriver;
+  const ICON = {
+    chart: '<path d="M5 20v-8M12 20V5M19 20v-5"/>',
+    funnel: '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',
+    swap: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
+    tag: '<path d="M3 12V4h8l9 9-8 8z"/><circle cx="7.5" cy="8.5" r="1"/>',
+    trim: '<path d="M4 6h16M4 12h10M4 18h6"/>',
+    toggle: '<rect x="2" y="7" width="20" height="10" rx="5"/><circle cx="16" cy="12" r="2.5"/>',
+    gate: '<path d="M12 2l10 10-10 10L2 12z"/><path d="M8 12h8"/>'
+  };
+  const STEPS = [
+    ['chart', 'Measure first', 'Does one step use most tokens?', 'Fix it first. Read model_usage.'],
+    ['funnel', 'Cap the volume', 'Does it process every item it finds?', 'Cap items per run. Set a lookback window.'],
+    ['swap', 'Replace plumbing', 'Does a model fetch, parse or write?', 'Use an API, connector, regex or Liquid step.'],
+    ['tag', 'Get the label with the answer', 'Does a 2nd call only classify the 1st?', 'Use an output schema or a one-line marker.'],
+    ['trim', 'Trim the inputs', 'Is there data the model never uses?', 'Exclude fields, cut text, truncate hand-offs.'],
+    ['toggle', 'Start with extras off', 'Might a customer not want a feature?', 'Add a switch and default it to off.'],
+    ['gate', 'Gate and limit', 'Does a follow-up always run?', 'Gate it with an if. One or two model retries.']
+  ];
+  const grid = document.getElementById('grid'), rail = document.getElementById('rail');
+  let timers = [], cards = [];
+
+  function build(){
+    timers.forEach(clearTimeout); timers = [];
+    grid.innerHTML = STEPS.map(([ic, t, q, a], i) => `<div class="pc"><div class="hd"><span class="ic"><svg viewBox="0 0 24 24">${ICON[ic]}</svg></span><span class="no">0${i + 1}</span></div><h2>${t}</h2><p class="q">${q}</p><p class="a">${a}</p></div>`).join('') +
+      '<div class="pc fin"><div class="t">The model for judgment.<span>APIs for everything else.</span></div></div>';
+    cards = [...grid.children];
+    rail.style.width = '0';
+    cards.forEach((c, i) => {
+      if (still) { c.classList.add('show'); return; }
+      timers.push(setTimeout(() => {
+        cards.forEach(x => x.classList.remove('act'));
+        c.classList.add('show', 'act');
+        rail.style.width = ((i + 1) / cards.length * 1136) + 'px';
+        if (i === cards.length - 1) { c.classList.add('pulse'); timers.push(setTimeout(() => { c.classList.remove('act'); rail.style.opacity = 0; }, 700)); }
+      }, 400 + i * 190));
+      if (i < cards.length - 1) timers.push(setTimeout(() => c.classList.remove('act'), 400 + i * 190 + 190));
+    });
+    rail.style.opacity = still ? 0 : 1;
+  }
+  document.getElementById('rp').addEventListener('click', build);
+  build();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Why optimize</title>
+<link rel="stylesheet" href="style/eweb.css">
+<style>
+  h1{font-size:40px;letter-spacing:-1.3px;max-width:1136px}
+  .rp{position:absolute;top:50px;right:72px;z-index:6;font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--grey);border:1px solid var(--line);background:#fff;padding:6px 10px;cursor:pointer}
+  .rp:hover{border-color:var(--blue);color:var(--blue)}
+
+  .legend{position:absolute;left:72px;top:178px;display:flex;gap:26px;z-index:3;font:400 13.5px var(--sans);color:var(--char)}
+  .lg{display:flex;align-items:center;gap:8px;cursor:default;padding:4px 0;transition:opacity .2s}
+  .lg i{width:12px;height:12px;border-radius:2px}
+  .lg.base i{width:26px;height:0;border-top:2px dashed var(--ink);border-radius:0}
+  .lg:hover{color:var(--ink)}
+
+  #chart{position:absolute;left:72px;top:212px;width:800px;height:430px;z-index:2}
+  #plot svg{display:block;overflow:visible}
+  #plot text{font-family:var(--mono)}
+  .ax{font-size:11px;fill:var(--grey)}
+  .bar{transform-box:fill-box;transform-origin:50% 100%;animation:grow .5s cubic-bezier(.2,.8,.2,1) both;transition:opacity .2s}
+  .bar.dim{opacity:.16}
+  .bar.hov{stroke:var(--ink);stroke-width:1}
+  .hit{fill:transparent;cursor:crosshair}
+  @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  .mk{animation:fadein .5s ease both}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .ml{font-size:11px;letter-spacing:.06em;stroke:#fff;stroke-width:5;paint-order:stroke;stroke-linejoin:round}
+  .base.on line{stroke-width:2.2}
+  #tip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;padding:7px 10px;font:400 11px var(--mono);letter-spacing:.04em;opacity:0;transition:opacity .12s;white-space:nowrap;z-index:4;box-shadow:4px 4px 0 var(--blue)}
+  #tip.on{opacity:1}
+  #tip span{display:block;color:var(--grey-l);text-transform:uppercase;font-size:10px}
+  #tip b{font:600 14px var(--sans);letter-spacing:-.2px}
+  #chart.still *{animation:none!important}
+
+  .cards{position:absolute;left:904px;right:72px;top:222px;display:flex;flex-direction:column;gap:14px;z-index:2}
+  .sc{--c:var(--blue);background:#fff;border:1px solid var(--line);border-left:4px solid var(--c);padding:0 20px;height:134px;display:flex;flex-direction:column;justify-content:center;cursor:default;transition:transform .18s,box-shadow .18s,border-color .18s}
+  .sc:hover{border-color:var(--ink);border-left-color:var(--c);box-shadow:6px 6px 0 var(--c);transform:translate(-3px,-3px)}
+  .sc .stat{font-size:58px;letter-spacing:-2px;color:var(--c)}
+  .sc .cap{margin-top:8px;font-size:14px}
+  .sc.in3,.sc.in4,.sc.in5{animation-fill-mode:backwards}
+  .sc.s1{--c:#98A2B3}.sc.s2{--c:var(--orange)}.sc.s3{--c:var(--blue)}
+  .sc.s1 .stat{color:var(--grey)}
+</style>
+</head>
+<body data-foot="Workflow optimizations · Why">
+<div class="z">
+  <div class="eyebrow in1">Why · <b>Cost</b></div>
+  <h1 class="in2">Daily ECU jumped with AI features. <span class="b">Then fell as workflows were optimized.</span></h1>
+</div>
+<button class="rp in1" id="rp">↻ replay</button>
+
+<div class="legend in3">
+  <span class="lg" data-f="before"><i style="background:#98A2B3"></i>Before</span>
+  <span class="lg" data-f="ai"><i style="background:var(--orange)"></i>Attack Discovery and workflows on</span>
+  <span class="lg" data-f="opt"><i style="background:var(--blue)"></i>Optimized workflows</span>
+  <span class="lg base" data-f="base"><i></i>July baseline, about 140</span>
+</div>
+
+<div id="chart">
+  <div id="plot"></div>
+  <div id="tip"></div>
+</div>
+
+<div class="cards">
+  <div class="sc s1 in3" data-f="before" style="animation-delay:.4s"><div class="stat" id="n1">~140</div><div class="cap">ECU a day in July, before</div></div>
+  <div class="sc s2 in4" data-f="ai" style="animation-delay:.75s"><div class="stat" id="n2">380+</div><div class="cap">peak day, nearly 3× the baseline</div></div>
+  <div class="sc s3 in5" data-f="quiet" style="animation-delay:1.1s"><div class="stat" id="n3">~110</div><div class="cap">on quiet days after optimizing, below the baseline</div></div>
+</div>
+
+<script src="style/eweb.js"></script>
+<script src="/js/fuckslides.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const still = navigator.webdriver;
+
+  // daily ECU, Jul 18 to Sep 14
+  const DATA = [
+    140,140,141,140,175,152,215,144,142,191,143,139,138,137,137,137,138,137,137,138,139,139,140,   // before (23)
+    224,242,237,283,236,164,358,259,365,380,                                                       // AI features on (10)
+    162,207,181,160,183,293,176,177,185,167,222,235,119,112,110,108,107,107,133,111,113,164,159,111,108,167 // optimized (26)
+  ];
+  const N = DATA.length, AI0 = 23, OPT0 = 33;
+  const phase = i => i < AI0 ? 'before' : i < OPT0 ? 'ai' : 'opt';
+  const COL = {before: '#98A2B3', ai: '#FF7E62', opt: '#0B64DD'};
+  const W = 800, H = 430, X0 = 48, X1 = 792, YT = 18, YB = 388, SL = (X1 - X0) / N, BW = 8.6;
+  const ys = v => YB - v / 400 * (YB - YT), bx = i => X0 + i * SL + (SL - BW) / 2;
+  const date = i => new Date(Date.UTC(2026, 6, 18 + i)).toLocaleDateString('en-US', {month: 'short', day: 'numeric', timeZone: 'UTC'});
+
+  const chart = $('chart'), plot = $('plot'), tip = $('tip');
+  let bars = [];
+
+  function build(){
+    chart.classList.toggle('still', !!still);
+    let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+    [0, 100, 200, 300, 400].forEach(v => {
+      const y = ys(v);
+      s += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" stroke="${v ? '#DDE3EC' : '#98A2B3'}"/><text class="ax" x="${X0 - 10}" y="${y + 4}" text-anchor="end">${v}</text>`;
+    });
+    [0, 14, 28, 42, 56].forEach(i => { s += `<text class="ax" x="${bx(i) + BW / 2}" y="${YB + 24}" text-anchor="middle">${date(i)}</text>`; });
+    DATA.forEach((v, i) => {
+      s += `<rect class="bar" data-i="${i}" x="${bx(i).toFixed(2)}" y="${ys(v).toFixed(2)}" width="${BW}" height="${(YB - ys(v)).toFixed(2)}" fill="${COL[phase(i)]}" style="animation-delay:${(.35 + i * .015).toFixed(3)}s"/>`;
+    });
+    // July baseline: draws left to right
+    const yb = ys(140);
+    s += `<g class="base"><line x1="${X0}" x2="${still ? X1 : X0}" y1="${yb}" y2="${yb}" stroke="#1D1E24" stroke-width="1.4" stroke-dasharray="5 4">` +
+         (still ? '' : `<animate attributeName="x2" from="${X0}" to="${X1}" dur=".8s" begin=".3s" fill="freeze"/>`) + `</line></g>`;
+    // event markers
+    const mk = (i, color, ink, anchor, dx, title, sub, delay) => {
+      const x = X0 + i * SL;
+      return `<g class="mk" style="animation-delay:${delay}s"><line x1="${x}" x2="${x}" y1="${YT - 6}" y2="${YB}" stroke="${color}" stroke-width="1.4" stroke-dasharray="2 3"/>` +
+        `<text class="ml" x="${x + dx}" y="${YT + 10}" text-anchor="${anchor}" font-weight="600" fill="${ink}">${title}</text>` +
+        `<text class="ml" x="${x + dx}" y="${YT + 26}" text-anchor="${anchor}" fill="${ink}">${sub}</text></g>`;
+    };
+    s += mk(AI0, '#FF7E62', '#B5481F', 'end', -8, 'AI FEATURES AND WORKFLOWS ENABLED', 'daily ECU jumps', (.35 + AI0 * .015).toFixed(2));
+    s += mk(OPT0, '#0B64DD', '#0A4FB0', 'start', 8, 'OPTIMIZED WORKFLOWS ROLLED OUT', 'daily ECU steps back down', (.35 + OPT0 * .015).toFixed(2));
+    // hover targets, one per day, painted last
+    DATA.forEach((v, i) => { s += `<rect class="hit" data-i="${i}" x="${(X0 + i * SL).toFixed(2)}" y="${YT}" width="${SL.toFixed(2)}" height="${YB - YT}"/>`; });
+    plot.innerHTML = s + '</svg>';
+    bars = [...plot.querySelectorAll('.bar')];
+  }
+
+  // hover a day: tooltip with the date and value
+  function show(i){
+    bars[i].classList.add('hov');
+    tip.innerHTML = `<span>${date(i)} · ${{before: 'before', ai: 'AI features on', opt: 'optimized'}[phase(i)]}</span><b>${DATA[i]} ECU</b>`;
+    tip.style.left = Math.max(0, Math.min(W - 150, bx(i) + BW / 2 - 52)) + 'px';
+    tip.style.top = Math.max(0, ys(DATA[i]) - 56) + 'px';
+    tip.classList.add('on');
+  }
+  chart.addEventListener('mouseover', e => { const h = e.target.closest('.hit'); if (h) show(+h.dataset.i); });
+  chart.addEventListener('mouseout', e => { if (e.target.closest('.hit')){ tip.classList.remove('on'); bars.forEach(b => b.classList.remove('hov')); } });
+
+  // hover a legend item or a stat card: spotlight that phase
+  const FOCUS = {
+    before: i => i < AI0, ai: i => i >= AI0 && i < OPT0, opt: i => i >= OPT0,
+    quiet: i => i >= OPT0 && DATA[i] <= 120,
+    base: i => Math.abs(DATA[i] - 140) <= 3
+  };
+  const focus = k => bars.forEach((b, i) => b.classList.toggle('dim', !!k && !FOCUS[k](i)));
+  document.querySelectorAll('[data-f]').forEach(n => {
+    n.addEventListener('mouseenter', () => { focus(n.dataset.f); plot.querySelector('.base').classList.toggle('on', n.dataset.f === 'base'); if (n.dataset.f === 'ai') bars[32].classList.add('hov'); });
+    n.addEventListener('mouseleave', () => { focus(null); plot.querySelector('.base').classList.remove('on'); bars.forEach(b => b.classList.remove('hov')); });
+  });
+
+  function counts(){
+    EW.count($('n1'), 140, {pre: '~', delay: .4, dur: .5});
+    EW.count($('n2'), 380, {post: '+', delay: .75, dur: .6});
+    EW.count($('n3'), 110, {pre: '~', delay: 1.1, dur: .55});
+  }
+  $('rp').addEventListener('click', () => { build(); counts(); });
+
+  build(); counts();
+})();
+</script>
+</body>
+</html>

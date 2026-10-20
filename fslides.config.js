@@ -9,11 +9,21 @@ module.exports = {
   // Slide filenames in order, relative to the slides/ directory
   slides: [
     'cover.html',
+    'why.html',
+    'api-steps.html',
+    'regex-liquid.html',
+    'switches.html',
+    'playbook.html',
   ],
 
   // Human-readable labels for the overview panel (must match slides array length)
   labels: [
     'Cover',
+    'Why optimize',
+    'API steps',
+    'Regex and Liquid',
+    'Switches',
+    'Playbook',
   ],
 
   disabled: [],
